@@ -1,0 +1,111 @@
+import React from "react";
+import Header from "../../components/Header";
+import DashboardNav from "../../components/DashboardNav";
+
+const expiringProducts = [
+  { name: "Fresh Bread", shelf: "B-05", days: 1 },
+  { name: "Ground Beef", shelf: "D-01", days: 1 },
+  { name: "Organic Milk", shelf: "A-12", days: 2 },
+];
+
+const fifoRecommendations = [
+  { name: "Canned Tomatoes", shelf: "C-08", action: "Move to front" },
+  { name: "Pasta Sauce", shelf: "C-12", action: "Promote sale" },
+  { name: "Cereal Boxes", shelf: "D-03", action: "Restock front" },
+];
+
+
+function Dashboard() {
+
+  return (
+    <>
+      <Header />
+      <div className="min-h-screen bg-gray-50 px-4 py-6">
+        <DashboardNav />
+
+        <section className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+          <StatCard label="Total Products" value={10} icon="📦" color="blue" />
+          <StatCard label="Expiring Soon" value={9} icon="⏰" color="red" />
+          <StatCard label="Low Stock" value={6} icon="📈" color="yellow" />
+          <StatCard label="Categories" value={4} icon="📊" color="green" />
+        </section>
+
+        <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="bg-white rounded-xl shadow p-6">
+            <h2 className="flex items-center gap-2 text-lg font-semibold text-red-600 mb-4">
+              <span>⏰</span> Products Expiring Soon
+            </h2>
+            <ul className="space-y-3">
+              {expiringProducts.map((item) => (
+                <li
+                  key={item.name}
+                  className="flex justify-between items-center bg-red-50 rounded-lg px-4 py-3"
+                >
+                  <div>
+                    <div className="font-medium">{item.name}</div>
+                    <div className="text-xs text-gray-500">
+                      Shelf: {item.shelf}
+                    </div>
+                  </div>
+                  <span className="bg-red-500 text-white text-xs px-3 py-1 rounded-full">
+                    {item.days} {item.days === 1 ? "day" : "days"}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+
+
+          <div className="bg-white rounded-xl shadow p-6">
+            <h2 className="flex items-center gap-2 text-lg font-semibold text-blue-700 mb-4">
+              <span>📈</span> FIFO Recommendations
+            </h2>
+            <ul className="space-y-3">
+              {fifoRecommendations.map((item) => (
+                <li
+                  key={item.name}
+                  className="flex justify-between items-center bg-blue-50 rounded-lg px-4 py-3"
+                >
+                  <div>
+                    <div className="font-medium">{item.name}</div>
+                    <div className="text-xs text-gray-500">
+                      Shelf: {item.shelf}
+                    </div>
+                  </div>
+                  <button className="bg-blue-100 hover:bg-blue-200 text-blue-700 text-xs font-semibold px-3 py-1 rounded transition">
+                    {item.action}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+        </section>
+
+      </div>
+    </>
+  );
+}
+
+function StatCard({ label, value, icon, color }) {
+  const colorMap = {
+    blue: "bg-blue-100 text-blue-600",
+    red: "bg-red-100 text-red-600",
+    yellow: "bg-yellow-100 text-yellow-600",
+    green: "bg-green-100 text-green-600",
+  };
+  return (
+    <div className="bg-white rounded-xl shadow flex items-center gap-4 p-6">
+      <div className={`rounded-full p-3 text-2xl ${colorMap[color]}`}>
+        {icon}
+      </div>
+      <div>
+        <div className="text-3xl font-bold">{value}</div>
+        <div className="text-gray-500 text-sm">{label}</div>
+      </div>
+    </div>
+  );
+}
+
+export default Dashboard;
