@@ -25,9 +25,10 @@ function Signup() {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            username: fullName, // backend expects 'username'
+            username: fullName, 
             email,
             password,
+            role,
           }),
         }
       );
@@ -35,7 +36,6 @@ function Signup() {
       const data = await response.json();
 
       if (response.ok) {
-        // Navigate to dashboard based on role
         if (role === "staff") {
           navigate("/dashboard");
         } else {
@@ -53,7 +53,8 @@ function Signup() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#f5faff] to-[#e9f0ff]">
       <div className="bg-white rounded-2xl shadow-lg w-full max-w-md p-8">
         <form onSubmit={handleSubmit}>
-          {/* Header */}
+
+
           <div className="flex flex-col items-center mb-8">
             <div className="bg-blue-600 rounded-full w-20 h-20 flex items-center justify-center mb-4">
               <svg width="40" height="40" fill="none" viewBox="0 0 24 24">
@@ -77,7 +78,8 @@ function Signup() {
             <p className="text-gray-500 text-center">Join our platform today</p>
           </div>
 
-          {/* Role Switch */}
+
+
           <div className="flex mb-6">
             <button
               type="button"
@@ -103,7 +105,8 @@ function Signup() {
             </button>
           </div>
 
-          {/* Full Name */}
+
+
           <div className="mb-4">
             <label className="block font-medium mb-1" htmlFor="fullname">
               Full Name
@@ -120,7 +123,8 @@ function Signup() {
 
           {error && <div className="text-red-500 mb-2">{error}</div>}
 
-          {/* Email */}
+
+
           <div className="mb-4">
             <label className="block font-medium mb-1" htmlFor="email">
               Email
@@ -135,7 +139,8 @@ function Signup() {
             />
           </div>
 
-          {/* Password */}
+
+
           <div className="mb-6">
             <label className="block font-medium mb-1" htmlFor="password">
               Password
@@ -173,7 +178,7 @@ function Signup() {
             </div>
           </div>
 
-          {/* Submit */}
+
           <button
             type="submit"
             className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg shadow transition mb-4 text-lg"
@@ -181,7 +186,7 @@ function Signup() {
             Create Account
           </button>
 
-          {/* Links */}
+
           <div className="text-center">
             <Link
               to="/login"

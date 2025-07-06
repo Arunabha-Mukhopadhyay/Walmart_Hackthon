@@ -24,6 +24,7 @@ function Login() {
         body: JSON.stringify({
           email,
           password,
+          role,
         }),
         credentials: "include", 
       });

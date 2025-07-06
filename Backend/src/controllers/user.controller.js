@@ -13,51 +13,49 @@ const generateAccessAndRefereshTokens = async (userId) => {
     await user.save({ validateBeforeSave: false })
 
     return { accessToken, refreshToken }
-
-
   } catch (error) {
     throw new APIerror(500, "Something went wrong while generating referesh and access token")
   }
 }
 
 const registerUser = asyncHandler(async (req, res) => {
-  // get user details from frontend
-  // validation - not empty
-  // check if user already exists: username, email
-  // check for images, check for avatar
-  // upload them to cloudinary, avatar
-  // create user object - create entry in db
-  // remove password and refresh token field from response
-  // check for user creation
-  // return res
+  const { email, username, password, role } = req.body
 
-
-  const { email, username, password } = req.body
-
-  if (
-    [username, email, password].some((field) => field?.trim() === "")
-  ) {
+  if ([username, email, password].some((field) => field?.trim() === "")) {
     throw new APIerror(400, "All fields are required")
   }
 
+  let finalEmail = email;
+  let finalRole = role;
+
+  if (role === "staff") {
+    if (!email.startsWith("staff")) {
+      throw new APIerror(400, "Staff email must start with 'staff' (e.g., staff+name@example.com)");
+    }
+    finalRole = "staff";
+  } else {
+    if (email.startsWith("staff")) {
+      throw new APIerror(400, "Customers cannot use emails starting with 'staff+'");
+    }
+    finalRole = "user";
+  }
+
   const existedUser = await User.findOne({
-    $or: [{ username }, { email }]
+    $or: [{ username }, { email: finalEmail }]
   })
 
   if (existedUser) {
     throw new APIerror(409, "User with email or username already exists")
   }
-  //console.log(req.files);
 
   const user = await User.create({
     username,
-    email,
+    email: finalEmail,
     password,
+    role: finalRole
   })
 
-  const createdUser = await User.findById(user._id).select(
-    "-password -refreshToken"
-  )
+  const createdUser = await User.findById(user._id).select("-password -refreshToken")
 
   if (!createdUser) {
     throw new APIerror(500, "Something went wrong while registering the user")
@@ -66,32 +64,26 @@ const registerUser = asyncHandler(async (req, res) => {
   return res.status(201).json(
     new ApiResponse(200, createdUser, "User registered Successfully")
   )
-
 })
 
-
-
 const loginUser = asyncHandler(async (req, res) => {
-  // req body -> data
-  // username or email
-  //find the user
-  //password check
-  //access and referesh token
-  //send cookie
+  const { email, password, role } = req.body
 
-  const { email, password } = req.body
-
-  if (!password && !email) {
+  if (!password || !email) {
     throw new APIerror(400, "password or email is required")
   }
 
-  // Here is an alternative of above code based on logic discussed in video:
-  // if (!(username || email)) {
-  //     throw new APIerror(400, "username or email is required")
+  if (role === "staff") {
+    if (!email.startsWith("staff")) {
+      throw new APIerror(400, "Staff email must start with 'staff' (e.g., staffname@example.com)");
+    }
+  } else {
+    if (email.startsWith("staff")) {
+      throw new APIerror(400, "Customers cannot use emails starting with 'staff'");
+    }
+  }
 
-  // }
-
-  const user = await User.findOne({ email })
+  const user = await User.findOne({ email });
 
   if (!user) {
     throw new APIerror(404, "User does not exist")
@@ -109,7 +101,7 @@ const loginUser = asyncHandler(async (req, res) => {
 
   const options = {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production", // Only secure in production
+    secure: process.env.NODE_ENV === "production",
     sameSite: "lax"
   }
 
@@ -127,7 +119,6 @@ const loginUser = asyncHandler(async (req, res) => {
       )
     )
 })
-
 
 const logoutUser = asyncHandler(async (req, res) => {
   await User.findByIdAndUpdate(

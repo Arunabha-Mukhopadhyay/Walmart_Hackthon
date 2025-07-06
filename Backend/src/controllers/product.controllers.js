@@ -22,6 +22,9 @@ export const createProduct = asyncHandler(async (req, res) => {
   if (!product) {
     return res.status(400).json(new APIerror(400, "Product creation failed"));
   }
+
+  res.status(201).json(new ApiResponse(201, product, "Product created"));
+  
 });
 
 
@@ -36,21 +39,18 @@ export const getAllProducts = asyncHandler(async (req, res) => {
 });
 
 
-// Get products by category
 export const getProductsByCategory = asyncHandler(async (req, res) => {
   const products = await Product.find({ category: req.params.categoryId });
   res.json(new ApiResponse(200, products));
 });
 
 
-// Get low stock products
 export const getLowStockProducts = asyncHandler(async (req, res) => {
   const products = await Product.find({ $expr: { $lt: ["$stock_quantity", "$stock_threshold"] } }).populate("category");
   res.json(new ApiResponse(200, products));
 });
 
 
-// Get expiring soon products (next 3 days)
 export const getExpiringProducts = asyncHandler(async (req, res) => {
   const soon = new Date();
   soon.setDate(soon.getDate() + 3);

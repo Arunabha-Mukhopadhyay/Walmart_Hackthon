@@ -3,18 +3,12 @@ import Header from "../../components/Header";
 import DashboardNav from "../../components/DashboardNav";
 import axios from "axios";
 
-const expiringProducts = [
-  { name: "Fresh Bread", shelf: "B-05", days: 1 },
-  { name: "Ground Beef", shelf: "D-01", days: 1 },
-  { name: "Organic Milk", shelf: "A-12", days: 2 },
-];
 
 const fifoRecommendations = [
   { name: "Canned Tomatoes", shelf: "C-08", action: "Move to front" },
   { name: "Pasta Sauce", shelf: "C-12", action: "Promote sale" },
   { name: "Cereal Boxes", shelf: "D-03", action: "Restock front" },
 ];
-
 
 
 

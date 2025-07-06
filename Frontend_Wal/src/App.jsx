@@ -9,6 +9,7 @@ import LowStock from "./Pages/Dashboard/LowStock/LowStock";
 import PurchaseList from "./Pages/Dashboard/PurchaseList/PurchaseList";
 import ShelfMap from "./Pages/Dashboard/ShelfMap";
 import AIAssistantTab from "./Pages/Dashboard/AI Page/AIAssistantTab";
+import UserHomepage from './Pages/USER/Homepage/Homepage'
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
         <Route path="/purchase-list" element={<PurchaseList/>} />
         <Route path="/shelf-map" element={<ShelfMap/>} />
         <Route path="/ai-assistant" element={<AIAssistantTab/>} />
+        <Route path="/customer-dashboard" element={<UserHomepage/>} />
       </Routes>
     </Router>
   );
