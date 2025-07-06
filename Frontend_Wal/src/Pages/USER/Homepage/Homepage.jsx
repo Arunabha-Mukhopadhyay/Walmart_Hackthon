@@ -1,12 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import {
-  FaShoppingCart,
-  FaMapMarkedAlt,
-  FaTags,
-  FaRobot,
-  FaStore,
-} from "react-icons/fa";
+import Sidebar from "../../../components/Sidebar";
+
 
 const Homepage = () => {
   const [products, setProducts] = useState([]);
@@ -44,35 +39,17 @@ const Homepage = () => {
 
   return (
     <div className="flex min-h-screen font-sans">
-      {/* Sidebar */}
-      <aside className="w-[220px] bg-white border-r border-gray-200 p-6">
-        <div className="font-bold text-xl mb-8 flex items-center gap-2">
-          <FaStore className="text-blue-600 text-2xl" />
-          WalmartPro
-        </div>
-        <nav className="flex flex-col gap-5 text-gray-800 text-sm">
-          <span className="flex items-center gap-2">
-            <FaShoppingCart /> Shopping List
-          </span>
-          <span className="flex items-center gap-2">
-            <FaMapMarkedAlt /> Store Navigation
-          </span>
-          <span className="flex items-center gap-2">
-            <FaTags /> Deals & Offers
-          </span>
-          <span className="flex items-center gap-2">
-            <FaRobot /> AI Suggestions
-          </span>
-        </nav>
-      </aside>
 
-      {/* Main Content */}
+
+      <Sidebar />
+
+
       <main className="flex-1 p-8 bg-gray-100">
         <h1 className="text-2xl font-bold mb-6">Products</h1>
         <div className="grid grid-cols-2 gap-4">
           {products.map((item) => (
             <div
-              key={item._id || item.id}
+              key={item._id}
               className="bg-white p-4 rounded-lg shadow flex justify-between items-center"
             >
               <div>
@@ -84,14 +61,14 @@ const Homepage = () => {
               </div>
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => handleQuantityChange(item._id || item.id, -1)}
+                  onClick={() => handleQuantityChange(item._id, -1)}
                   className="bg-red-500 text-white px-3 py-1 rounded text-lg"
                 >
                   −
                 </button>
                 <span className="text-md">{item.quantity}</span>
                 <button
-                  onClick={() => handleQuantityChange(item._id || item.id, 1)}
+                  onClick={() => handleQuantityChange(item._id, 1)}
                   className="bg-green-500 text-white px-3 py-1 rounded text-lg"
                 >
                   +
@@ -102,7 +79,8 @@ const Homepage = () => {
         </div>
       </main>
 
-      {/* Right Bill Summary */}
+
+
       <aside className="w-[260px] bg-white border-l border-gray-200 p-6">
         <h2 className="font-bold text-lg mb-4">Bill Summary</h2>
         <div className="text-gray-800 text-sm">
