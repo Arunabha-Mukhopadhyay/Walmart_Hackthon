@@ -1,79 +1,58 @@
-import axios from "axios";
 import React, { useEffect, useState } from "react";
+import axios from "axios";
 import {
-  FaListAlt,
+  FaShoppingCart,
   FaMapMarkedAlt,
   FaTags,
   FaRobot,
-  FaSearch,
-  FaHeart,
-  FaShareAlt,
+  FaStore,
 } from "react-icons/fa";
 
 const Homepage = () => {
-  const [shoppingList, setShoppingList] = useState([]);
-  const [newItem, setNewItem] = useState("");
+  const [products, setProducts] = useState([]);
 
   useEffect(() => {
     axios
       .get("http://localhost:3000/api/v1/category")
       .then((res) => {
-        setShoppingList(res.data.data || [])
+        const allProducts = (res.data.data || []).flatMap((category) =>
+          category.products.map((product) => ({
+            ...product,
+            categoryName: category.category,
+            quantity: 0,
+          }))
+        );
+        setProducts(allProducts);
       })
-      .catch((err) => {
-        console.error("Failed to fetch products:", err);
-      });
+      .catch((err) => console.error("Fetch failed:", err));
   }, []);
 
-  const handleAddItem = () => {
-    if (!newItem.trim()) return;
-    setShoppingList([
-      ...shoppingList,
-      {
-        id: Date.now(),
-        name: newItem,
-        category: "Other",
-        aisle: "-",
-        price: 0,
-        completed: false,
-      },
-    ]);
-    setNewItem("");
-  };
-
-  const handleToggle = (id) => {
-    setShoppingList((list) =>
-      list.map((item) =>
+  const handleQuantityChange = (id, delta) => {
+    setProducts((prev) =>
+      prev.map((item) =>
         (item._id || item.id) === id
-          ? { ...item, completed: !item.completed }
+          ? { ...item, quantity: Math.max(0, item.quantity + delta) }
           : item
       )
     );
   };
 
-  const handleClearCompleted = () => {
-    setShoppingList((list) =>
-      list.filter((item) => !item.completed)
-    );
-  };
-
-  const total = shoppingList.reduce(
-    (sum, item) => sum + (item.price || 0),
+  const totalCost = products.reduce(
+    (sum, item) => sum + item.quantity * (item.price || 0),
     0
   );
-  const completed = shoppingList.filter((item) => item.completed).length;
 
   return (
-    <div className="flex h-screen font-inter bg-gray-100">
+    <div className="flex min-h-screen font-sans">
       {/* Sidebar */}
       <aside className="w-[220px] bg-white border-r border-gray-200 p-6">
         <div className="font-bold text-xl mb-8 flex items-center gap-2">
-          <img src="/logo192.png" alt="logo" className="w-7 h-7" />
+          <FaStore className="text-blue-600 text-2xl" />
           WalmartPro
         </div>
-        <nav className="flex flex-col gap-4 text-gray-700">
+        <nav className="flex flex-col gap-5 text-gray-800 text-sm">
           <span className="flex items-center gap-2">
-            <FaListAlt /> Shopping List
+            <FaShoppingCart /> Shopping List
           </span>
           <span className="flex items-center gap-2">
             <FaMapMarkedAlt /> Store Navigation
@@ -88,170 +67,62 @@ const Homepage = () => {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 p-10 overflow-y-auto">
-        <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold">Shopping Assistant</h1>
-          <div className="flex items-center gap-4">
-            <span className="bg-gray-200 px-4 py-1 rounded-full font-semibold">
-              Customer
-            </span>
-            <span className="text-xl cursor-pointer">🔔</span>
-            <span className="text-xl cursor-pointer">⚙️</span>
-            <span className="text-xl cursor-pointer">⤴️</span>
-          </div>
-        </div>
-
-        <p className="text-gray-500 mt-1 mb-6">
-          Smart shopping with optimized routes and deals
-        </p>
-
-        {/* Tabs */}
-        <div className="flex mb-6 text-sm font-semibold">
-          <button className="flex-1 px-4 py-3 bg-white border border-gray-200 border-b-2 border-b-blue-600">
-            Shopping List
-          </button>
-          <button className="flex-1 px-4 py-3 bg-gray-100 border border-gray-200 text-gray-500">
-            Navigation
-          </button>
-          <button className="flex-1 px-4 py-3 bg-gray-100 border border-gray-200 text-gray-500">
-            Deals & Offers
-          </button>
-          <button className="flex-1 px-4 py-3 bg-gray-100 border border-gray-200 text-gray-500">
-            AI Suggestions
-          </button>
-        </div>
-
-        <div className="flex gap-8 flex-wrap">
-          {/* Shopping List */}
-          <section className="bg-white p-6 rounded-xl shadow-sm flex-1 min-w-[300px]">
-            <h2 className="font-semibold text-lg mb-1">My Shopping List</h2>
-            <p className="text-sm text-gray-500 mb-4">
-              {shoppingList.length} items • {completed} completed
-            </p>
-
-            {/* Progress */}
-            <div className="bg-gray-200 h-4 rounded mb-4 relative overflow-hidden">
-              <div
-                className="bg-blue-600 h-full rounded transition-all"
-                style={{
-                  width: `${
-                    shoppingList.length
-                      ? (completed / shoppingList.length) * 100
-                      : 0
-                  }%`,
-                }}
-              />
-              <span className="absolute right-2 top-0 text-xs h-full flex items-center text-gray-700">
-                {Math.round(
-                  shoppingList.length
-                    ? (completed / shoppingList.length) * 100
-                    : 0
-                )}
-                % Complete
-              </span>
-            </div>
-
-            {/* Add item */}
-            <div className="flex gap-2 mb-4">
-              <input
-                type="text"
-                placeholder="Add new item..."
-                value={newItem}
-                onChange={(e) => setNewItem(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleAddItem()}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-md"
-              />
-              <button
-                onClick={handleAddItem}
-                className="bg-blue-600 text-white px-4 text-xl rounded-md"
-              >
-                +
-              </button>
-            </div>
-
-            {/* Item List */}
-            <div className="divide-y divide-gray-100">
-              {shoppingList.map((item) => (
-                <div
-                  key={item._id || item.id}
-                  className="flex items-center gap-3 py-3 text-sm"
+      <main className="flex-1 p-8 bg-gray-100">
+        <h1 className="text-2xl font-bold mb-6">Products</h1>
+        <div className="grid grid-cols-2 gap-4">
+          {products.map((item) => (
+            <div
+              key={item._id || item.id}
+              className="bg-white p-4 rounded-lg shadow flex justify-between items-center"
+            >
+              <div>
+                <h3 className="font-semibold text-lg">{item.product_name}</h3>
+                <p className="text-sm text-gray-600">
+                  Category: {item.categoryName} | Shelf: {item.shelf}
+                </p>
+                <p className="text-sm text-gray-500">${item.price.toFixed(2)}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handleQuantityChange(item._id || item.id, -1)}
+                  className="bg-red-500 text-white px-3 py-1 rounded text-lg"
                 >
-                  <input
-                    type="checkbox"
-                    checked={item.completed}
-                    onChange={() => handleToggle(item._id || item.id)}
-                  />
-                  <div className="flex-1">
-                    <p className="font-medium">{item.name}</p>
-                    <p className="text-gray-500 text-xs">
-                      {(typeof item.category === "string"
-                        ? item.category
-                        : item.category?.name || "Uncategorized")}{" "}
-                      • Aisle {item.aisle || "-"} • $
-                      {item.price?.toFixed(2) || "0.00"}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {completed > 0 && (
-              <button
-                onClick={handleClearCompleted}
-                className="mt-4 bg-red-500 text-white px-4 py-2 rounded"
-              >
-                Clear Completed
-              </button>
-            )}
-          </section>
-
-          {/* Stats and Quick Actions */}
-          <aside className="flex flex-col gap-6 flex-1 min-w-[260px]">
-            {/* Stats */}
-            <div className="bg-white p-6 rounded-xl shadow-sm">
-              <h3 className="font-semibold text-lg mb-4">Shopping Stats</h3>
-              <div className="text-sm mb-2">
-                Total Items{" "}
-                <span className="float-right">{shoppingList.length}</span>
-              </div>
-              <div className="text-sm mb-2">
-                Completed{" "}
-                <span className="float-right text-green-600">
-                  {completed}
-                </span>
-              </div>
-              <div className="text-sm mb-2">
-                Remaining{" "}
-                <span className="float-right text-orange-500">
-                  {shoppingList.length - completed}
-                </span>
-              </div>
-              <div className="text-sm font-semibold mt-4">
-                Est. Total{" "}
-                <span className="float-right">
-                  ${total.toFixed(2)}
-                </span>
-              </div>
-            </div>
-
-            {/* Quick Actions */}
-            <div className="bg-white p-6 rounded-xl shadow-sm">
-              <h3 className="font-semibold text-lg mb-4">Quick Actions</h3>
-              <div className="flex flex-col gap-3 text-sm">
-                <button className="flex items-center gap-2 text-left hover:text-blue-600">
-                  <FaSearch /> Find Product
+                  −
                 </button>
-                <button className="flex items-center gap-2 text-left hover:text-blue-600">
-                  <FaHeart /> Favorites
-                </button>
-                <button className="flex items-center gap-2 text-left hover:text-blue-600">
-                  <FaShareAlt /> Share List
+                <span className="text-md">{item.quantity}</span>
+                <button
+                  onClick={() => handleQuantityChange(item._id || item.id, 1)}
+                  className="bg-green-500 text-white px-3 py-1 rounded text-lg"
+                >
+                  +
                 </button>
               </div>
             </div>
-          </aside>
+          ))}
         </div>
       </main>
+
+      {/* Right Bill Summary */}
+      <aside className="w-[260px] bg-white border-l border-gray-200 p-6">
+        <h2 className="font-bold text-lg mb-4">Bill Summary</h2>
+        <div className="text-gray-800 text-sm">
+          {products
+            .filter((p) => p.quantity > 0)
+            .map((item) => (
+              <div key={item._id || item.id} className="flex justify-between mb-2">
+                <span>
+                  {item.product_name} x {item.quantity}
+                </span>
+                <span>${(item.quantity * item.price).toFixed(2)}</span>
+              </div>
+            ))}
+        </div>
+        <hr className="my-4" />
+        <div className="text-lg font-semibold flex justify-between">
+          <span>Total:</span>
+          <span>${totalCost.toFixed(2)}</span>
+        </div>
+      </aside>
     </div>
   );
 };
