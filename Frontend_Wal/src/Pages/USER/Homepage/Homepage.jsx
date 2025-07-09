@@ -1,10 +1,14 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 import Sidebar from "../../../components/Sidebar";
 
 
 const Homepage = () => {
   const [products, setProducts] = useState([]);
+  const navigate = useNavigate()
+
+  const selectedItems = products.filter((item) => item.quantity > 0);
 
   useEffect(() => {
     axios
@@ -100,6 +104,15 @@ const Homepage = () => {
           <span>Total:</span>
           <span>${totalCost.toFixed(2)}</span>
         </div>
+
+        <button
+        disabled={selectedItems.length === 0}
+        onClick={() => navigate("/navigate", { state: { selectedItems } })}
+        className="mt-4 w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 disabled:opacity-50"
+        >
+          Show Store Map 🗺️
+        </button>
+        
       </aside>
     </div>
   );

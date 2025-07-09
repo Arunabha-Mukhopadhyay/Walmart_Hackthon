@@ -9,6 +9,18 @@ import {
 } from "react-icons/fa";
 import { NavLink } from "react-router-dom";
 
+const handleLogout = async () => {
+  try {
+    await fetch("http://localhost:3000/api/v1/users/logout", {
+      method: "POST",
+      credentials: "include",
+    });
+  } catch (err) {
+    console.error("Logout failed:", err);
+  }
+  navigate("/login");
+};
+
 function Sidebar() {
   const navItemClass = ({ isActive }) =>
     `flex items-center gap-2 px-2 py-1 rounded-md ${
@@ -25,7 +37,7 @@ function Sidebar() {
         <NavLink to="/customer-dashboard" className={navItemClass}>
           <FaShoppingCart /> Shopping List
         </NavLink>
-        <NavLink to="/navigation" className={navItemClass}>
+        <NavLink to="/navigate" className={navItemClass}>
           <FaMapMarkedAlt /> Store Navigation
         </NavLink>
         <NavLink to="/deals" className={navItemClass}>
@@ -33,6 +45,14 @@ function Sidebar() {
         </NavLink>
         <NavLink to="/ai" className={navItemClass}>
           <FaRobot /> AI Suggestions
+        </NavLink>
+        <NavLink to="/login" className={navItemClass}>
+          <button
+          className="border px-4 py-2 rounded-lg font-medium hover:bg-gray-100 transition"
+          onClick={handleLogout}
+          >
+            Logout
+          </button>
         </NavLink>
       </nav>
     </aside>

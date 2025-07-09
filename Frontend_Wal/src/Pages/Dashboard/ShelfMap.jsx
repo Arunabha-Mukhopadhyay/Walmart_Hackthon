@@ -3,7 +3,6 @@ import axios from "axios";
 import Header from "../../components/Header";
 import DashboardNav from "../../components/DashboardNav";
 
-// Define rows and columns
 const ROWS = ["A", "B", "C", "D"];
 const COLS = [1, 2, 3, 4, 5, 6, 7, 8,9,10,11,12,13,14,15];
 
@@ -23,12 +22,12 @@ function ShelfMap() {
 
   // Helper to find shelf info by matching all possible backend formats
   const getShelfInfo = (id) => {
-    // Try A-01, Shelf: A-01, etc.
     return (
       shelves.find((s) => s.shelf === id) ||
       shelves.find((s) => s.shelf === `Shelf: ${id}`)
     );
   };
+
 
   return (
     <>
@@ -36,8 +35,7 @@ function ShelfMap() {
       <div className="min-h-screen bg-gray-50 px-4 py-6">
         <DashboardNav />
 
-        
-
+      
         <div className="mb-2">
           <h1 className="text-2xl font-bold flex items-center gap-2">
             <span className="text-lg">📍</span> Store Shelf Map Editor
@@ -54,7 +52,6 @@ function ShelfMap() {
             <div className="grid grid-cols-4 gap-6">
               {ROWS.map((row) =>
                 COLS.map((col) => {
-                  // Pad col with leading zero for 2 digits
                   const id = `${row}-${col.toString().padStart(2, "0")}`;
                   const info = getShelfInfo(id);
                   const isOccupied = !!info;

@@ -10,6 +10,7 @@ import PurchaseList from "./Pages/Dashboard/PurchaseList/PurchaseList";
 import ShelfMap from "./Pages/Dashboard/ShelfMap";
 import AIAssistantTab from "./Pages/Dashboard/AI Page/AIAssistantTab";
 import UserHomepage from './Pages/USER/Homepage/Homepage'
+import Navigation from "./Pages/USER/Navigation/Navigation";
 
 function App() {
   return (
@@ -26,6 +27,7 @@ function App() {
         <Route path="/shelf-map" element={<ShelfMap/>} />
         <Route path="/ai-assistant" element={<AIAssistantTab/>} />
         <Route path="/customer-dashboard" element={<UserHomepage/>} />
+        <Route path="/navigate" element={<Navigation/>} />
       </Routes>
     </Router>
   );
