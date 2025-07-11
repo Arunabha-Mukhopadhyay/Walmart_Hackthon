@@ -85,24 +85,26 @@ IMPORTANT RULES:
 function extractAIJson(agentResponse) {
   let content = agentResponse;
 
-  // If AgentKit AgentResult object
+  // Extract AgentKit output
   if (content && content.output && Array.isArray(content.output) && content.output[0].content) {
     content = content.output[0].content;
   }
 
-  // If markdown code block
-  if (typeof content === 'string' && content.trim().startsWith('```json')) {
-    // Remove both the starting and ending code block markers
-    content = content.replace(/^```json\s*/, '').replace(/```$/, '').trim();
-  } else if (typeof content === 'string' && content.trim().startsWith('```')) {
-    // Remove generic code block markers if present
-    content = content.replace(/^```\w*\s*/, '').replace(/```$/, '').trim();
+  // Remove code block markers
+  if (typeof content === 'string' && content.trim().startsWith('```')) {
+    content = content.replace(/^```[\s\S]*?\n/, '').replace(/```$/, '').trim();
   }
 
-  // Parse JSON
+  // Use regex to extract the first complete JSON object or array
   if (typeof content === 'string') {
-    return JSON.parse(content);
+    const jsonMatch = content.match(/({[\s\S]*}|\[[\s\S]*])/);
+    if (jsonMatch) {
+      return JSON.parse(jsonMatch[0]);
+    } else {
+      throw new Error("No valid JSON object found in AI response.");
+    }
   }
+
   return content;
 }
 
