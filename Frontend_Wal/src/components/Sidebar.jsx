@@ -43,9 +43,6 @@ function Sidebar() {
         <NavLink to="/deals" className={navItemClass}>
           <FaTags /> Deals & Offers
         </NavLink>
-        <NavLink to="/ai" className={navItemClass}>
-          <FaRobot /> AI Suggestions
-        </NavLink>
         <NavLink to="/login" className={navItemClass}>
           <button
           className="border px-4 py-2 rounded-lg font-medium hover:bg-gray-100 transition"

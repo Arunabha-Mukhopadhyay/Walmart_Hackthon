@@ -3,7 +3,7 @@ import { useLocation } from "react-router-dom";
 import axios from "axios";
 import Sidebar from "../../../components/Sidebar";
 
-const ROWS = ["A", "B", "C"];
+const ROWS = ["A", "B", "C", "D"];
 const COLS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17];
 
 function Navigation() {
@@ -32,30 +32,121 @@ function Navigation() {
   const getShelfInfo = (code) =>
     shelves.find((shelf) => shelf.shelf?.toUpperCase() === code);
 
-  const sortByDistance = (points) => {
-    if (points.length === 0) return [];
-    const visited = [];
-    let current = points[0];
-    visited.push(current);
+  const ENTRANCE_POSITION = { x: 500, y: 550 }; // Bottom center of the smaller store
 
-    while (visited.length < points.length) {
-      let nearest = null;
-      let minDist = Infinity;
+  const getAisleAndPosition = (shelfCode) => {
+    const [row, colStr] = shelfCode.split('-');
+    const col = parseInt(colStr);
+    
+    // Block 1: columns 1-9, Block 2: columns 10-17
+    const block = col <= 9 ? 1 : 2;
+    const positionInBlock = col <= 9 ? col : col - 9;
+    
+    return { row, col, block, positionInBlock };
+  };
 
-      for (let p of points) {
-        if (visited.includes(p)) continue;
-        const dist = Math.abs(current.x - p.x) + Math.abs(current.y - p.y);
-        if (dist < minDist) {
-          minDist = dist;
-          nearest = p;
-        }
-      }
-
-      visited.push(nearest);
-      current = nearest;
+  const calculateWalkingDistance = (point1, point2) => {
+    // Handle entrance as starting point
+    if (point1.code === 'ENTRANCE') {
+      const shelf = getAisleAndPosition(point2.code);
+      const entranceToBlockDistance = shelf.block === 1 ? 20 : 40;
+      const rowDistance = (4 - ROWS.indexOf(shelf.row)) * 15; // Distance from bottom
+      return entranceToBlockDistance + rowDistance + shelf.positionInBlock * 2;
     }
+    
+    if (point2.code === 'ENTRANCE') {
+      return calculateWalkingDistance(point2, point1);
+    }
+    
+    const shelf1 = getAisleAndPosition(point1.code);
+    const shelf2 = getAisleAndPosition(point2.code);
+    
+    // If in same block and same row, distance is just horizontal
+    if (shelf1.block === shelf2.block && shelf1.row === shelf2.row) {
+      return Math.abs(shelf1.positionInBlock - shelf2.positionInBlock) * 2;
+    }
+    
+    // If in same block but different rows
+    if (shelf1.block === shelf2.block) {
+      return Math.abs(shelf1.positionInBlock - shelf2.positionInBlock) * 2 + 
+             Math.abs(ROWS.indexOf(shelf1.row) - ROWS.indexOf(shelf2.row)) * 15;
+    }
+    
+    // If in different blocks, need to go through aisle
+    const toAisle1 = shelf1.positionInBlock * 2;
+    const fromAisle2 = shelf2.positionInBlock * 2;
+    const rowDiff = Math.abs(ROWS.indexOf(shelf1.row) - ROWS.indexOf(shelf2.row)) * 15;
+    
+    return toAisle1 + fromAisle2 + rowDiff + 25; // 25 is the aisle crossing penalty
+  };
 
-    return visited;
+  const optimizeRouteFromEntrance = (points) => {
+    if (points.length === 0) return [];
+    
+    // Add entrance as starting point
+    const entrancePoint = { 
+      x: ENTRANCE_POSITION.x, 
+      y: ENTRANCE_POSITION.y, 
+      code: 'ENTRANCE' 
+    };
+    
+    // Use a modified nearest neighbor algorithm with layout awareness
+    const route = [entrancePoint];
+    const remaining = [...points];
+    let current = entrancePoint;
+    
+    while (remaining.length > 0) {
+      let bestNext = null;
+      let minDistance = Infinity;
+      let bestIndex = -1;
+      
+      remaining.forEach((point, index) => {
+        const distance = calculateWalkingDistance(current, point);
+        
+        // Apply heuristics for better routing
+        const shelf = getAisleAndPosition(point.code);
+        let penalty = 0;
+        
+        // Prefer staying in same block if possible
+        if (route.length > 1) {
+          const lastShelf = route[route.length - 1];
+          if (lastShelf.code !== 'ENTRANCE') {
+            const lastShelfInfo = getAisleAndPosition(lastShelf.code);
+            if (lastShelfInfo.block !== shelf.block) {
+              penalty += 10; // Penalty for switching blocks
+            }
+          }
+        }
+        
+        // Prefer completing rows before moving to next row
+        const currentRowShelves = remaining.filter(p => {
+          const pShelf = getAisleAndPosition(p.code);
+          return pShelf.row === shelf.row && pShelf.block === shelf.block;
+        });
+        
+        if (currentRowShelves.length > 1) {
+          penalty -= 5; // Bonus for staying in same row
+        }
+        
+        const totalDistance = distance + penalty;
+        
+        if (totalDistance < minDistance) {
+          minDistance = totalDistance;
+          bestNext = point;
+          bestIndex = index;
+        }
+      });
+      
+      if (bestNext) {
+        route.push(bestNext);
+        remaining.splice(bestIndex, 1);
+        current = bestNext;
+      } else {
+        break;
+      }
+    }
+    
+    return route;
   };
 
   useLayoutEffect(() => {
@@ -76,7 +167,7 @@ function Navigation() {
         })
         .filter(Boolean);
 
-      const sorted = sortByDistance(coords);
+      const sorted = optimizeRouteFromEntrance(coords);
 
       const same =
         pathPoints.length === sorted.length &&
@@ -89,7 +180,7 @@ function Navigation() {
 
       if (!same) {
         setPathPoints(sorted);
-        setOrderedShelfCodes(sorted.map((p) => p.code));
+        setOrderedShelfCodes(sorted.filter(p => p.code !== 'ENTRANCE').map((p) => p.code));
       }
     };
 
@@ -97,57 +188,110 @@ function Navigation() {
     return () => clearTimeout(timeout);
   }, [highlightedShelves.join(","), shelves.length]);
 
+  const getShelfPosition = (row, col) => {
+    const rowIndex = ROWS.indexOf(row);
+    const colIndex = col - 1;
+    
+    // Define shelf blocks based on your drawing
+    // Each block contains certain columns with aisles between them
+    let blockIndex = 0;
+    let positionInBlock = colIndex;
+    
+    // Block 1: columns 1-9 (A1-A9, B1-B9, etc.)
+    if (colIndex < 9) {
+      blockIndex = 0;
+      positionInBlock = colIndex;
+    }
+    // Block 2: columns 10-17 (A10-A17, B10-B17, etc.)
+    else {
+      blockIndex = 1;
+      positionInBlock = colIndex - 9;
+    }
+    
+    // Calculate positions with proper spacing for smaller container
+    const shelfWidth = 50;
+    const shelfHeight = 30;
+    const aisleWidth = 40; // Space between blocks
+    const rowSpacing = 60;
+    
+    const startX = 80;
+    const startY = 180; // Moved down to make room for the route display
+    
+    const left = startX + (blockIndex * (9 * shelfWidth + aisleWidth)) + (positionInBlock * shelfWidth);
+    const top = startY + (rowIndex * rowSpacing);
+    
+    return { left, top, shelfWidth, shelfHeight };
+  };
+
   return (
     <div className="flex min-h-screen font-sans">
       <Sidebar />
       <main className="flex-1 bg-gray-100 p-8">
         <h1 className="text-2xl font-bold mb-6">🧭 Store Shelf Navigation</h1>
 
+        {/* Route summary moved to top */}
+        {orderedShelfCodes.length > 0 && (
+          <div className="mb-6 bg-white border-2 border-gray-300 rounded-lg p-4 shadow-lg max-w-4xl mx-auto">
+            <h3 className="font-bold text-lg mb-3 text-center">🗺️ Optimized Route:</h3>
+            <div className="flex flex-wrap items-center justify-center gap-2 mb-3">
+              <div className="bg-green-100 text-green-700 px-3 py-1 rounded-full font-semibold text-sm">
+                📍 START: Entrance
+              </div>
+              <div className="text-gray-400">→</div>
+              {orderedShelfCodes.map((code, index) => {
+                const shelf = getAisleAndPosition(code);
+                return (
+                  <React.Fragment key={index}>
+                    <div className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full font-semibold text-sm flex items-center gap-1">
+                      <span className="bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
+                        {index + 1}
+                      </span>
+                      {code}
+                      <span className="text-xs text-gray-600">(Block {shelf.block})</span>
+                    </div>
+                    {index < orderedShelfCodes.length - 1 && (
+                      <div className="text-gray-400">→</div>
+                    )}
+                  </React.Fragment>
+                );
+              })}
+            </div>
+            <div className="text-center text-sm text-gray-600 border-t pt-3">
+              <div className="flex justify-center gap-6">
+                <span>✨ Route optimized for shortest walking distance</span>
+                <span>🏁 Total stops: {orderedShelfCodes.length}</span>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div
           ref={containerRef}
-          className="relative w-[1400px] h-[1000px] bg-white border shadow mx-auto"
+          className="relative w-[1000px] h-[600px] bg-white border shadow mx-auto overflow-hidden"
         >
-          {/* Static zones */}
-          <div className="absolute top-[30px] left-[50px] w-[120px] h-[100px] bg-gray-300 flex items-center justify-center font-bold">
-            Toilet
+          {/* Store entrance indicator */}
+          <div 
+            style={{
+              left: `${ENTRANCE_POSITION.x - 60}px`,
+              top: `${ENTRANCE_POSITION.y - 10}px`,
+            }}
+            className="absolute text-lg font-bold text-gray-600 border-2 border-gray-400 px-4 py-2 bg-gray-100 rounded"
+          >
+            🚪 ENTRANCE
           </div>
 
-          <div className="absolute top-[160px] left-[50px] w-[100px] h-[480px] bg-blue-100 rotate-180 writing-vertical text-center text-xs flex items-center justify-center">
-            Cold Beverages, Alcoholic Beverages
-          </div>
-
-          <div className="absolute top-[800px] left-[60px] w-[150px] h-[50px] bg-yellow-100 flex items-center justify-center text-sm">
-            Ice Cream / Frozen Food
-          </div>
-
-          <div className="absolute top-[800px] left-[220px] w-[400px] h-[50px] bg-yellow-200 flex items-center justify-center text-sm">
-            Magazines and Newspapers
-          </div>
-
-          <div className="absolute top-[800px] left-[640px] w-[180px] h-[50px] bg-gray-400 flex items-center justify-center text-xs">
-            Garbage Bins
-          </div>
-
-          <div className="absolute top-[860px] left-[860px] w-[120px] h-[50px] bg-green-200 flex items-center justify-center text-sm">
-            ATM
-          </div>
-
-          <div className="absolute top-[700px] left-[980px] w-[90px] h-[100px] bg-blue-300 flex items-center justify-center text-xs">
-            Copiers
-          </div>
-
-          <div className="absolute top-[300px] left-[980px] w-[90px] h-[200px] bg-red-100 flex flex-col items-center justify-center text-xs">
-            <div className="mb-2">Cashier</div>
-            <div>Hot Food</div>
-          </div>
-
-          <div className="absolute top-[140px] left-[880px] w-[80px] h-[40px] bg-orange-200 flex items-center justify-center text-xs">
-            Hot Beverages
-          </div>
-
-          <div className="absolute top-[90px] left-[220px] w-[600px] h-[40px] bg-pink-100 flex items-center justify-center text-xs">
-            Entrance
-          </div>
+          {/* Starting point indicator at entrance */}
+          {pathPoints.length > 0 && (
+            <div
+              style={{
+                left: `${ENTRANCE_POSITION.x - 12}px`,
+                top: `${ENTRANCE_POSITION.y - 30}px`,
+              }}
+              className="absolute w-6 h-6 bg-green-500 text-white text-xs rounded-full flex items-center justify-center font-bold z-20 animate-pulse"
+            >
+              START
+            </div>
+          )}
 
           {/* SVG Path */}
           <svg className="absolute top-0 left-0 w-full h-full pointer-events-none z-0">
@@ -174,16 +318,16 @@ function Navigation() {
                   x2={next.x}
                   y2={next.y}
                   stroke="red"
-                  strokeWidth={2}
+                  strokeWidth={3}
                   markerEnd="url(#arrowhead)"
                 />
               );
             })}
           </svg>
 
-          {/* Shelves: All rows, split by aisle blocks */}
-          {ROWS.map((row, rowIndex) =>
-            COLS.map((col, colIndex) => {
+          {/* Shelves arranged in blocks */}
+          {ROWS.map((row) =>
+            COLS.map((col) => {
               const shelfCode = `${row}-${col < 10 ? `0${col}` : col}`;
               const shelfInfo = getShelfInfo(shelfCode);
               const isHighlighted = highlightedShelves.includes(shelfCode);
@@ -192,30 +336,31 @@ function Navigation() {
                   ? orderedShelfCodes.indexOf(shelfCode) + 1
                   : null;
 
-              const aisle = Math.floor(colIndex / 5);
-              const positionInAisle = colIndex % 5;
-
-              const top = 190 + rowIndex * 120;
-              const left = 180 + aisle * 160 + positionInAisle * 90;
+              const position = getShelfPosition(row, col);
 
               return (
                 <div
                   key={shelfCode}
                   id={`shelf-${shelfCode}`}
-                  style={{ top: `${top}px`, left: `${left}px` }}
-                  className={`absolute w-[80px] h-[50px] text-[10px] border flex flex-col items-center justify-center z-10
+                  style={{ 
+                    top: `${position.top}px`, 
+                    left: `${position.left}px`,
+                    width: `${position.shelfWidth}px`,
+                    height: `${position.shelfHeight}px`
+                  }}
+                  className={`absolute text-[10px] border-2 flex flex-col items-center justify-center z-10 rounded
                     ${isHighlighted
-                      ? "bg-blue-100 border-blue-400 text-blue-700"
-                      : "bg-white border-gray-300 text-gray-700"}`}
+                      ? "bg-blue-100 border-blue-500 text-blue-700 shadow-lg"
+                      : "bg-white border-gray-400 text-gray-700 hover:bg-gray-50"}`}
                 >
-                  <span className="font-semibold">{shelfCode}</span>
+                  <span className="font-semibold text-[11px]">{shelfCode}</span>
                   {stepNumber && (
-                    <div className="absolute top-1 left-1 w-4 h-4 bg-red-600 text-white text-[10px] rounded-full flex items-center justify-center font-bold">
+                    <div className="absolute -top-2 -right-2 w-5 h-5 bg-red-600 text-white text-[10px] rounded-full flex items-center justify-center font-bold border-2 border-white">
                       {stepNumber}
                     </div>
                   )}
                   {isHighlighted && (
-                    <span className="text-[9px] text-center px-1">
+                    <span className="text-[8px] text-center px-1 mt-1 leading-tight">
                       {
                         selectedItems.find(
                           (item) => item.shelf?.toUpperCase() === shelfCode
@@ -224,7 +369,7 @@ function Navigation() {
                     </span>
                   )}
                   {!isHighlighted && shelfInfo?.category && (
-                    <span className="text-[8px] text-gray-500">
+                    <span className="text-[8px] text-gray-500 mt-1">
                       {shelfInfo.category}
                     </span>
                   )}
@@ -232,6 +377,14 @@ function Navigation() {
               );
             })
           )}
+
+          {/* Aisle labels */}
+          <div className="absolute top-440 left-250 text-gray-500 font-semibold text-xs">
+            AISLE 1
+          </div>
+          <div className="absolute top-440 left-650 text-gray-500 font-semibold text-xs">
+            AISLE 2
+          </div>
         </div>
       </main>
     </div>
