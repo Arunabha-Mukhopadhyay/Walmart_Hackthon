@@ -30,7 +30,7 @@ function Navigation() {
   }, []);
 
   const getShelfInfo = (code) =>
-    shelves.find((shelf) => shelf.shelf.toUpperCase() === code);
+    shelves.find((shelf) => shelf.shelf?.toUpperCase() === code);
 
   const sortByDistance = (points) => {
     if (points.length === 0) return [];
@@ -103,7 +103,52 @@ function Navigation() {
       <main className="flex-1 bg-gray-100 p-8">
         <h1 className="text-2xl font-bold mb-6">🧭 Store Shelf Navigation</h1>
 
-        <div ref={containerRef} className="relative">
+        <div
+          ref={containerRef}
+          className="relative w-[1400px] h-[1000px] bg-white border shadow mx-auto"
+        >
+          {/* Static zones */}
+          <div className="absolute top-[30px] left-[50px] w-[120px] h-[100px] bg-gray-300 flex items-center justify-center font-bold">
+            Toilet
+          </div>
+
+          <div className="absolute top-[160px] left-[50px] w-[100px] h-[480px] bg-blue-100 rotate-180 writing-vertical text-center text-xs flex items-center justify-center">
+            Cold Beverages, Alcoholic Beverages
+          </div>
+
+          <div className="absolute top-[800px] left-[60px] w-[150px] h-[50px] bg-yellow-100 flex items-center justify-center text-sm">
+            Ice Cream / Frozen Food
+          </div>
+
+          <div className="absolute top-[800px] left-[220px] w-[400px] h-[50px] bg-yellow-200 flex items-center justify-center text-sm">
+            Magazines and Newspapers
+          </div>
+
+          <div className="absolute top-[800px] left-[640px] w-[180px] h-[50px] bg-gray-400 flex items-center justify-center text-xs">
+            Garbage Bins
+          </div>
+
+          <div className="absolute top-[860px] left-[860px] w-[120px] h-[50px] bg-green-200 flex items-center justify-center text-sm">
+            ATM
+          </div>
+
+          <div className="absolute top-[700px] left-[980px] w-[90px] h-[100px] bg-blue-300 flex items-center justify-center text-xs">
+            Copiers
+          </div>
+
+          <div className="absolute top-[300px] left-[980px] w-[90px] h-[200px] bg-red-100 flex flex-col items-center justify-center text-xs">
+            <div className="mb-2">Cashier</div>
+            <div>Hot Food</div>
+          </div>
+
+          <div className="absolute top-[140px] left-[880px] w-[80px] h-[40px] bg-orange-200 flex items-center justify-center text-xs">
+            Hot Beverages
+          </div>
+
+          <div className="absolute top-[90px] left-[220px] w-[600px] h-[40px] bg-pink-100 flex items-center justify-center text-xs">
+            Entrance
+          </div>
+
           {/* SVG Path */}
           <svg className="absolute top-0 left-0 w-full h-full pointer-events-none z-0">
             <defs>
@@ -136,57 +181,57 @@ function Navigation() {
             })}
           </svg>
 
-          {/* Shelf Grid */}
-          <div className="grid grid-cols-4 gap-4 relative z-10">
-            {ROWS.flatMap((row) =>
-              COLS.map((col) => {
-                const shelfCode = `${row}-${col < 10 ? `0${col}` : col}`;
-                const shelfInfo = getShelfInfo(shelfCode);
-                const isHighlighted = highlightedShelves.includes(shelfCode);
-                const stepNumber =
-                  orderedShelfCodes.indexOf(shelfCode) !== -1
-                    ? orderedShelfCodes.indexOf(shelfCode) + 1
-                    : null;
+          {/* Shelves: All rows, split by aisle blocks */}
+          {ROWS.map((row, rowIndex) =>
+            COLS.map((col, colIndex) => {
+              const shelfCode = `${row}-${col < 10 ? `0${col}` : col}`;
+              const shelfInfo = getShelfInfo(shelfCode);
+              const isHighlighted = highlightedShelves.includes(shelfCode);
+              const stepNumber =
+                orderedShelfCodes.indexOf(shelfCode) !== -1
+                  ? orderedShelfCodes.indexOf(shelfCode) + 1
+                  : null;
 
-                return (
-                  <div
-                    key={shelfCode}
-                    id={`shelf-${shelfCode}`}
-                    className={`border rounded-lg h-24 flex flex-col items-center justify-center relative
-                      ${isHighlighted
-                        ? "bg-blue-100 border-blue-400 text-blue-700"
-                        : "bg-white border-gray-300 text-gray-700"
-                      }`}
-                  >
-                    <span className="font-semibold">{shelfCode}</span>
+              const aisle = Math.floor(colIndex / 5);
+              const positionInAisle = colIndex % 5;
 
-                    {stepNumber && (
-                      <div className="absolute top-1 left-1 w-6 h-6 bg-red-600 text-white text-xs rounded-full flex items-center justify-center font-bold">
-                        {stepNumber}
-                      </div>
-                    )}
+              const top = 190 + rowIndex * 120;
+              const left = 180 + aisle * 160 + positionInAisle * 90;
 
-                    {isHighlighted && (
-                      <span className="text-sm text-center px-1">
-                        {
-                          selectedItems.find(
-                            (item) =>
-                              item.shelf?.toUpperCase() === shelfCode
-                          )?.product_name
-                        }
-                      </span>
-                    )}
-
-                    {!isHighlighted && shelfInfo?.category && (
-                      <span className="text-xs text-gray-500">
-                        {shelfInfo.category}
-                      </span>
-                    )}
-                  </div>
-                );
-              })
-            )}
-          </div>
+              return (
+                <div
+                  key={shelfCode}
+                  id={`shelf-${shelfCode}`}
+                  style={{ top: `${top}px`, left: `${left}px` }}
+                  className={`absolute w-[80px] h-[50px] text-[10px] border flex flex-col items-center justify-center z-10
+                    ${isHighlighted
+                      ? "bg-blue-100 border-blue-400 text-blue-700"
+                      : "bg-white border-gray-300 text-gray-700"}`}
+                >
+                  <span className="font-semibold">{shelfCode}</span>
+                  {stepNumber && (
+                    <div className="absolute top-1 left-1 w-4 h-4 bg-red-600 text-white text-[10px] rounded-full flex items-center justify-center font-bold">
+                      {stepNumber}
+                    </div>
+                  )}
+                  {isHighlighted && (
+                    <span className="text-[9px] text-center px-1">
+                      {
+                        selectedItems.find(
+                          (item) => item.shelf?.toUpperCase() === shelfCode
+                        )?.product_name
+                      }
+                    </span>
+                  )}
+                  {!isHighlighted && shelfInfo?.category && (
+                    <span className="text-[8px] text-gray-500">
+                      {shelfInfo.category}
+                    </span>
+                  )}
+                </div>
+              );
+            })
+          )}
         </div>
       </main>
     </div>
